@@ -51,6 +51,7 @@ void ABird::Move(const FInputActionValue& Value)
 		UE_LOG(LogTemp, Warning, TEXT("IA_BirdMove"));
 	}
 
+
 }
 
 // Called every frame
