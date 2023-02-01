@@ -44,14 +44,22 @@ void ABird::MoveForward(float Value) {
 
 void ABird::Move(const FInputActionValue& Value)
 {
-
-	UE_LOG(LogTemp, Warning, TEXT("IA_Move"));
-	const bool CurrentValue = Value.Get<bool>();
-	if (CurrentValue) {
+	const float DirectionValue = Value.Get<float>();
+	if (GetController() && (DirectionValue != 0.f)) {
 		UE_LOG(LogTemp, Warning, TEXT("IA_BirdMove"));
+		FVector Forward = GetActorForwardVector();
+		UE_LOG(LogTemp, Warning, TEXT("Input value: %f"), DirectionValue);
+		AddMovementInput(Forward, DirectionValue);
 	}
+}
 
-
+void ABird::Look(const FInputActionValue& Value)
+{
+	FVector2D LookAxisValue = Value.Get<FVector2D>();
+	if (GetController()) {
+		AddControllerYawInput(LookAxisValue.X);
+		AddControllerPitchInput(LookAxisValue.Y);
+	}
 }
 
 // Called every frame
@@ -68,6 +76,7 @@ void ABird::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABird::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABird::Look);
 	}
 }
 
