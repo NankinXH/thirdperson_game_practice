@@ -4,6 +4,8 @@
 #include "Pawns/Bird.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -15,12 +17,19 @@ ABird::ABird()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Capsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
-	Capsule->SetCapsuleHalfHeight(2.0f);
+	Capsule->SetCapsuleHalfHeight(20.f);
 	Capsule->SetCapsuleRadius(15.f);
 	SetRootComponent(Capsule);
 
 	BirdMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BirdMesh"));
 	BirdMesh->SetupAttachment(GetRootComponent());
+
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	SpringArm->SetupAttachment(Capsule);
+	SpringArm->TargetArmLength = 300.f;
+
+	ViewCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ViewCamera"));
+	ViewCamera->SetupAttachment(SpringArm);
 
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
@@ -33,22 +42,17 @@ void ABird::BeginPlay()
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) {
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
-			Subsystem->AddMappingContext(BirdMappingContext, 0);
+			Subsystem->AddMappingContext(BirdMappingContext, 100);
 		}
 	}
 
-}
-void ABird::MoveForward(float Value) {
-	UE_LOG(LogTemp, Warning, TEXT("Value: %f"), Value);
 }
 
 void ABird::Move(const FInputActionValue& Value)
 {
 	const float DirectionValue = Value.Get<float>();
-	if (GetController() && (DirectionValue != 0.f)) {
-		UE_LOG(LogTemp, Warning, TEXT("IA_BirdMove"));
+	if (Controller && (DirectionValue != 0.f)) {
 		FVector Forward = GetActorForwardVector();
-		UE_LOG(LogTemp, Warning, TEXT("Input value: %f"), DirectionValue);
 		AddMovementInput(Forward, DirectionValue);
 	}
 }
@@ -76,7 +80,7 @@ void ABird::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABird::Move);
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABird::Look);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABird::Look);
 	}
 }
 
